@@ -9,6 +9,8 @@ const bodyParser = require("body-parser");
 const PORT = process.env.PORT || 8000;
 const app = express();
 const UserRoutes = require("./Routes/User");
+const ExpressError = require("./middleware/expressError");
+
 
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -30,10 +32,16 @@ app.use("/api/v1/user", UserRoutes);
 
 
 
-app.get("/login" , (req , res)=>{
-    res.send("Login Page");
-})
+app.use((err, req, res, next) => {
+  const statusCode = err.statusCode || 500;
+  let message = err.message || "Something went wrong";
 
+  res.status(statusCode).json({
+    status: false,
+    error: message,
+    
+  });
+});
 
 
 app.listen(PORT, () => {
