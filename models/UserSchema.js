@@ -1,3 +1,4 @@
+const { number, date, boolean } = require("joi");
 const mongoose = require("mongoose");
 
 
@@ -23,7 +24,17 @@ const userSchema = new mongoose.Schema({
     enum: ['creator', 'editor'],
     required: true
   },
+  otp:{
+    type: String
+  },
+  otpExpirey:{
+    type: Date
+  },
   avatar: String,
+  isverified:{
+    type:Boolean,
+    default:false
+  },
   isActive: {
     type: Boolean,
     default: true

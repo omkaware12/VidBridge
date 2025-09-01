@@ -2,10 +2,14 @@ const User = require("../models/UserSchema");
 const Expresserror = require("../middleware/expressError");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { expression } = require("joi");
+const sendEmail = require("../middleware/email");
 
-module.exports.createUser = async (req, res) => {
+
+
+module.exports.createUser = async (req, res , next) => {
     try{
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role , avatar  } = req.body;
   // const avatar = req.file?.path;
 
  const ExistingUser =  await User.findOne({
@@ -13,10 +17,7 @@ module.exports.createUser = async (req, res) => {
   })
 
    if(ExistingUser){
-       return res.status(409).json({
-        success: false,
-        message: "User already exists, please sign in."
-      });
+    return next(new Expresserror("User already exists. Please sign in.", 409));
    }
 
 //    if(!avatar){
@@ -36,50 +37,43 @@ module.exports.createUser = async (req, res) => {
 
      NewUser.password = await bcrypt.hash(NewUser.password, 10);
       await NewUser.save();
-     console.log("user created success fully");
+       return res.status(200).json({
+        message: "signup successfully enjoy now"
+       });
+     
     } catch (error) {
       console.error("Error creating user:", error);
-      throw new Expresserror(error.message, 500);
+        next(new Expresserror(error.message, 500)); 
     }
 };
 
 
-module.exports.loginUser = async(req , res) => {
+module.exports.loginUser = async(req , res , next) => {
      try{
           const {email , password} = req.body;
           console.log(email);
           const ExistingUser = await User.findOne({email});
           if(!ExistingUser){
-                return res.status(403).json({
-                 success: false,
-                 message: "email or password is wrong"
-                });
+               return next(new Expresserror("User not found please sign up.", 409));
           }
 
           const ispassequal = await bcrypt.compare(password , ExistingUser.password);
           if(!ispassequal){
-               return res.status(403).json({
-                 success: false,
-                 message: "email or password is wrong"
-                });  
+               return next(new Expresserror("password is incorrect " , 401))  
           }
 
-          const jwttoken = jwt.sign({
-             name: ExistingUser.name,
-              email: ExistingUser.email,
-              role: ExistingUser.role,
-               },
-            process.env.JWT_SECRET,
-          {expiresIn : "4d"}
-        );
+          const genrateOtp = Math.floor(100000 + Math.random() * 900000).toString();
+          ExistingUser.otp  = genrateOtp;
+          ExistingUser.otpExpirey = Date.now() + 10 * 60 * 1000;
+          await ExistingUser.save();
+          await sendEmail(email , genrateOtp);
 
+          
 
            return res.status(200).json({
                  success: true,
-                 message: "you are successfully logged in",
-                 jwttoken,
-                 email,
-                 name:ExistingUser.name
+                 message: "OTP sent to your email. Please verify.",
+                 email
                 }); 
         
      }catch(err){
@@ -89,8 +83,44 @@ module.exports.loginUser = async(req , res) => {
 };
 
 
-module.exports.displayUser = async(req, res)=>{
-      console.log(req.user);
+module.exports.verifyotp = async(req , res , next)=>{
+    try{
+        const {email , otp}  = req.body;
+        const ExistingUser = await User.findOne({email});
+         if(!ExistingUser){
+            return next(new Expresserror("User not found.", 404));
+         }
 
-      return res.status(200).json(req.user);
+  if (ExistingUser.otp !== otp || ExistingUser.otpExpirey < Date.now()){
+      return next(new Expresserror("Invalid or expired OTP.", 401));
+    }
+
+    ExistingUser.otp = undefined;
+    ExistingUser.otpExpirey = undefined;
+    await ExistingUser.save();
+
+
+    const jwttoken = jwt.sign(
+      {
+        _id: ExistingUser._id,
+        name: ExistingUser.name,
+        email: ExistingUser.email,
+        role: ExistingUser.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "4d" }
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP verified successfully. You are logged in.",
+      token: jwttoken,
+      email: ExistingUser.email,
+      name: ExistingUser.name,
+      role: ExistingUser.role
+    });
+    } catch(err){
+        console.error("Error verifying OTP:", err);
+    return next(new Expresserror(err.message, 500));
+    }
 }

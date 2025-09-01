@@ -5,6 +5,8 @@ if (process.env.NODE_ENV !== "production") {
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
+const cors = require("cors");
+
 
 const PORT = process.env.PORT || 8000;
 const app = express();
@@ -12,8 +14,15 @@ const UserRoutes = require("./Routes/User");
 const ExpressError = require("./middleware/expressError");
 
 
-app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(cors({
+  origin: "http://localhost:5173", // your frontend address
+  credentials: true // if you use cookies or auth headers
+}));
+
+
+app.use(express.json()); // ✅ Parses JSON body
+app.use(express.urlencoded({ extended: true })); // ✅ Parses form data
 //app.use("/api/v1/user", UserRoutes);
 
 async function main() {

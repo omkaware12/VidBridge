@@ -15,7 +15,7 @@ router.post(
 
 router.post("/login" ,loginValidation,  UserController.loginUser)
 
-router.get("/profile" , isAuthenticate , UserController.displayUser )
+router.post("/verifyotp" , UserController.verifyotp);
 
 
 module.exports = router;
