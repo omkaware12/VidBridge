@@ -17,6 +17,10 @@ const channelSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  subscribeCount: {
+    type: Number,
+    default: 0
+  },
   accessToken: {
     type: String,
     required: true

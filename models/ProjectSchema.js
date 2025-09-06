@@ -18,15 +18,18 @@ const projectSchema = new mongoose.Schema({
   editorId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: false
   },
   channelId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Channel',
     required: true
   },
-  
-  
+  priority: {
+    type: String,
+    enum: ["Low", "Medium", "High"],
+    default: "Medium",
+  },
   rawFiles: [{
     filename: String,
     path: String,

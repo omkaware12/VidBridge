@@ -64,7 +64,7 @@ module.exports.loginUser = async(req , res , next) => {
 
           const genrateOtp = Math.floor(100000 + Math.random() * 900000).toString();
           ExistingUser.otp  = genrateOtp;
-          ExistingUser.otpExpirey = Date.now() + 10 * 60 * 1000;
+          ExistingUser.otpExpirey = Date.now() + 5 * 60 * 1000;
           await ExistingUser.save();
           await sendEmail(email , genrateOtp);
 
@@ -117,7 +117,8 @@ module.exports.verifyotp = async(req , res , next)=>{
       token: jwttoken,
       email: ExistingUser.email,
       name: ExistingUser.name,
-      role: ExistingUser.role
+      role: ExistingUser.role,
+      id: ExistingUser._id
     });
     } catch(err){
         console.error("Error verifying OTP:", err);

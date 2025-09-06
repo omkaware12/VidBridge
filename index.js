@@ -11,6 +11,8 @@ const cors = require("cors");
 const PORT = process.env.PORT || 8000;
 const app = express();
 const UserRoutes = require("./Routes/User");
+const googleroutes = require("./Routes/googleroutes")
+const projectRoutes = require("./Routes/projectRoute")
 const ExpressError = require("./middleware/expressError");
 
 
@@ -37,7 +39,8 @@ main()
 
 
 app.use("/api/v1/user", UserRoutes);
-
+app.use("/api/v1/google", googleroutes);
+app.use("/api/v1/project", projectRoutes);
 
 
 
