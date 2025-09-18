@@ -8,7 +8,7 @@ const { cloudinary, storage } = require("../Cloud");
 const upload = multer({ storage })
 router.post(
   "/signup",
-//  upload.single("avatar"),
+ upload.single("avatar"),
   signupValidation,
   UserController.createUser
 );

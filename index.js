@@ -13,6 +13,9 @@ const app = express();
 const UserRoutes = require("./Routes/User");
 const googleroutes = require("./Routes/googleroutes")
 const projectRoutes = require("./Routes/projectRoute")
+const ProfileRoute = require("./Routes/profileRoute");
+const PaymentRoute = require("./Routes/PaymentRoute");
+const {stripeWebhook} = require("./Controllers/PaymentController")
 const ExpressError = require("./middleware/expressError");
 
 
@@ -21,6 +24,9 @@ app.use(cors({
   origin: "http://localhost:5173", // your frontend address
   credentials: true // if you use cookies or auth headers
 }));
+
+
+
 
 
 app.use(express.json()); // ✅ Parses JSON body
@@ -41,7 +47,8 @@ main()
 app.use("/api/v1/user", UserRoutes);
 app.use("/api/v1/google", googleroutes);
 app.use("/api/v1/project", projectRoutes);
-
+app.use("/api/v1/profile" , ProfileRoute);
+app.use("/api/v1/payments", PaymentRoute);
 
 
 app.use((err, req, res, next) => {

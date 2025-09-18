@@ -7,10 +7,11 @@ const sendEmail = require("../middleware/email");
 
 
 
-module.exports.createUser = async (req, res , next) => {
+module.exports.createUser = async (req, res ) => {
     try{
-  const { name, email, password, role , avatar  } = req.body;
-  // const avatar = req.file?.path;
+  const { name, email, password, role   } = req.body;
+   const avatar = req.file?.path;
+
 
  const ExistingUser =  await User.findOne({
     $or : [{email} , {name}]
@@ -20,19 +21,19 @@ module.exports.createUser = async (req, res , next) => {
     return next(new Expresserror("User already exists. Please sign in.", 409));
    }
 
-//    if(!avatar){
-//       return res.status(400).json({
-//         success: false,
-//         message: "Please upload an avatar."
-//       });
-//    }
+   if(!avatar){
+      return res.status(400).json({
+        success: false,
+        message: "Please upload an avatar."
+      });
+   }
 
      const NewUser = new User({
         name,
         email,
         password,
         role,
-      //  avatar
+        avatar
      })
 
      NewUser.password = await bcrypt.hash(NewUser.password, 10);
