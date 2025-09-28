@@ -49,80 +49,61 @@ module.exports.googleLogin = (req, res) => {
 };
 
 // Step 2: Handle Google Callback
-module.exports.googleCallback = async (req, res, next) => {
+module.exports.googleCallback = async (req, res) => {
   try {
     const code = req.query.code;
     const state = req.query.state;
-    
-    if (!code) {
-      return res.redirect(`http://localhost:5173/dashboard?error=no_code`);
+
+    if (!code || !state) {
+      return res.redirect(`http://localhost:5173/dashboard?error=oauth_failed`);
     }
 
-    if (!state) {
-      return res.redirect(`http://localhost:5173/dashboard?error=no_state`);
-    }
+    const decodedState = JSON.parse(Buffer.from(state, 'base64').toString());
+    const userId = decodedState.userId;
+    const redirectTo = decodedState.redirectTo || '/creator-dashboard';
 
-    // Decode user info from state
-    console.log("State received:", state);
-    let userId;
-    try {
-      const decoded = JSON.parse(Buffer.from(state, 'base64').toString());
-      userId = decoded.userId;
-    } catch (err) {
-      return res.redirect(`http://localhost:5173/dashboard?error=invalid_state`);
-    }
-
-    // Exchange code for tokens
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    // Get user's YouTube channel info
     const youtube = google.youtube("v3");
     const response = await youtube.channels.list({
       auth: oauth2Client,
       mine: true,
-      part: "id,snippet ,statistics",
+      part: "id,snippet,statistics",
     });
 
     if (!response.data.items || response.data.items.length === 0) {
-      return res.redirect(`http://localhost:5173/dashboard?error=no_channel`);
+      return res.redirect(`http://localhost:5173${redirectTo}?error=no_channel`);
     }
 
     const channelData = response.data.items[0];
-    const channelId = channelData.id;
-    const channelName = channelData.snippet.title;
-    const subscribers = channelData.statistics.subscriberCount;
-
-    // Save in DB using userId from state
     let channel = await Channel.findOne({ userId });
     if (!channel) {
       channel = new Channel({
         userId,
-        channelId,
-        channelName,
-        subscribeCount: subscribers,
+        channelId: channelData.id,
+        channelName: channelData.snippet.title,
+        subscribeCount: channelData.statistics.subscriberCount,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
       });
     } else {
       channel.accessToken = tokens.access_token;
-      if (tokens.refresh_token) {
-        channel.refreshToken = tokens.refresh_token;
-      }
-      channel.channelName = channelName;
-      channel.subscribeCount = subscribers;
+      if (tokens.refresh_token) channel.refreshToken = tokens.refresh_token;
+      channel.channelName = channelData.snippet.title;
+      channel.subscribeCount = channelData.statistics.subscriberCount;
     }
 
     await channel.save();
 
-    // Redirect back to frontend with success
-    res.redirect(`http://localhost:5173/dashboard?youtubeConnected=true&channelName=${encodeURIComponent(channelName)}`);
-
+    // ✅ Redirect to dynamic path (creator dashboard)
+    res.redirect(`http://localhost:5173${redirectTo}`);
   } catch (err) {
     console.error("Google Callback Error:", err);
     res.redirect(`http://localhost:5173/dashboard?error=oauth_failed`);
   }
 };
+
 
 module.exports.googleStatus = async (req, res) => {
   try {

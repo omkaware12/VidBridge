@@ -25,6 +25,7 @@
     "multer-storage-cloudinary": "^4.0.0",
     "nodemailer": "^7.0.5",
     "nodemon": "^3.1.10",
+    "pdfkit": "^0.17.2",
     "routers": "^0.1.4",
     "stripe": "^18.5.0"
   }

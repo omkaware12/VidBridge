@@ -6,6 +6,10 @@ const paymentSchema = new mongoose.Schema({
     ref: "User", 
     required: true,
   },
+  email:{
+    type: String,
+    required: true,
+  },
   stripeSessionId: {
     type: String,
     required: true,

@@ -42,10 +42,10 @@ const projectSchema = new mongoose.Schema({
   },
   
   status: {
-    type: String,
-    enum: ['assigned', 'in_progress', 'completed', 'cancelled'],
-    default: 'assigned'
-  }
+  type: String,
+  enum: ["Assigned", "In Progress", "Completed", "Cancelled"], 
+  default: "Assigned",
+}
 }, {
   timestamps: true
 });

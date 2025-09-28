@@ -15,7 +15,8 @@ const googleroutes = require("./Routes/googleroutes")
 const projectRoutes = require("./Routes/projectRoute")
 const ProfileRoute = require("./Routes/profileRoute");
 const PaymentRoute = require("./Routes/PaymentRoute");
-const {stripeWebhook} = require("./Controllers/PaymentController")
+// const {stripeWebhook} = require("./Controllers/PaymentController")
+const editorsRoutes = require("./Routes/editorsRoutes");
 const ExpressError = require("./middleware/expressError");
 
 
@@ -49,6 +50,7 @@ app.use("/api/v1/google", googleroutes);
 app.use("/api/v1/project", projectRoutes);
 app.use("/api/v1/profile" , ProfileRoute);
 app.use("/api/v1/payments", PaymentRoute);
+app.use("/api/v1", editorsRoutes);
 
 
 app.use((err, req, res, next) => {
