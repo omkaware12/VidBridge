@@ -5,7 +5,7 @@ const { google } = require("googleapis");
 const Channel = require("../models/Channel");
 const { Readable } = require("stream");
 
-// ======================== GET ASSIGNED PROJECTS ========================
+
 module.exports.getAssignedProjects = async (req, res) => {
   try {
     const EditorId = req.user._id;
@@ -23,7 +23,7 @@ module.exports.getAssignedProjects = async (req, res) => {
   }
 };
 
-// ======================== UPDATE PROJECT STATUS ========================
+
 module.exports.updateProjectStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -56,7 +56,7 @@ module.exports.updateProjectStatus = async (req, res) => {
   }
 };
 
-// ======================== GET DOWNLOAD URL ========================
+
 module.exports.getdownloadUrl = async (req, res) => {
   try {
     const { projectId } = req.body;
@@ -96,7 +96,7 @@ module.exports.getdownloadUrl = async (req, res) => {
   }
 };
 
-// ======================== COMPLETED VIDEOS ========================
+
 module.exports.completedvideos = async (req, res) => {
   try {
     const projects = await Project.find({
@@ -114,8 +114,7 @@ module.exports.completedvideos = async (req, res) => {
   }
 };
 
-// ======================== OAUTH CLIENT HELPER ========================
-// editorController.js
+
 
 async function getOAuthClient(channel) {
   const oauth2Client = new google.auth.OAuth2(
@@ -129,19 +128,15 @@ async function getOAuthClient(channel) {
     refresh_token: channel.refreshToken,
   });
 
-  // 🔑 ensures fresh token if old one expired
+  // refresh if needed
   await oauth2Client.getAccessToken();
-
   return oauth2Client;
 }
 
+
 module.exports.UploadVideo = async (req, res) => {
   try {
-    console.log("📥 FILE:", {
-      name: req.file?.originalname,
-      type: req.file?.mimetype,
-      size: req.file?.size,
-    });
+    console.log("📥 FILE:", req.file);
     console.log("📥 BODY:", req.body);
     console.log("📥 PARAMS:", req.params);
 
@@ -149,34 +144,34 @@ module.exports.UploadVideo = async (req, res) => {
       return res.status(400).json({ error: "No video file uploaded" });
     }
 
-    // 1️⃣ Find project
-    const project = await Project.findById(req.params.taskId).populate(
-      "channelId"
-    );
+    
+    const project = await Project.findById(req.params.taskId).populate("channelId");
     if (!project) {
       return res.status(404).json({ error: "Project not found" });
     }
 
-    // 2️⃣ Get linked channel
+    // 2️⃣ Linked channel
     const channel = project.channelId;
     if (!channel) {
       return res.status(400).json({ error: "No channel linked to this project" });
     }
 
-    // 3️⃣ Setup YouTube API client
+    // 3️⃣ Setup YouTube client
     const oauth2Client = await getOAuthClient(channel);
     const youtube = google.youtube({ version: "v3", auth: oauth2Client });
 
-    // 4️⃣ Convert file buffer → stream
-    const bufferStream = Readable.from(req.file.buffer);
+    // 4️⃣ Convert buffer → stream
+    const bufferStream = new Readable();
+    bufferStream.push(req.file.buffer);
+    bufferStream.push(null);
 
-    // 5️⃣ Upload video
+    // 5️⃣ Upload video to YouTube
     const response = await youtube.videos.insert({
       part: ["snippet", "status"],
       requestBody: {
         snippet: {
-          title: req.body.title || project.title,
-          description: req.body.description || project.description,
+          title: req.body.title || project.title || "Untitled Video",
+          description: req.body.description || project.description || "",
         },
         status: { privacyStatus: "private" },
       },
@@ -185,8 +180,14 @@ module.exports.UploadVideo = async (req, res) => {
 
     console.log("✅ YouTube upload response:", response.data);
 
-    // 6️⃣ Update project
+    // 6️⃣ Update project in DB
     project.status = "Completed";
+    project.rawFiles.push({
+      filename: req.file.originalname,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      uploadedVideoId: response.data.id,
+    });
     await project.save();
 
     res.status(200).json({
@@ -194,7 +195,7 @@ module.exports.UploadVideo = async (req, res) => {
       videoId: response.data.id,
     });
   } catch (error) {
-    console.error("❌ Upload error:", JSON.stringify(error, null, 2));
+    console.error("❌ Upload error:", error);
     res.status(500).json({
       error: error.message,
       details: error.errors || null,

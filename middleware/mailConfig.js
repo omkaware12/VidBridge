@@ -5,8 +5,8 @@ const nodemailer = require("nodemailer");
   port: 587,
   secure: false, // true for 465, false for other ports
   auth: {
-    user: "vidbridge7@gmail.com",
-    pass: "ikmf cyfr cewl dasu",
+    user: "vidbridge18@gmail.com",
+    pass: "pwzr jxhs hffz nrol",
   },
 });
 

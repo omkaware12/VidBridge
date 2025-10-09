@@ -14,6 +14,12 @@ router.post("/editor/projects/download" ,  ensureAuthenticated , isEditor , edit
 
 router.get("/editor/projects/completed" , ensureAuthenticated , isEditor , editorController.completedvideos);
 
-router.post("/editor/projects/upload/:taskId", ensureAuthenticated, isEditor , upload.single("video") , editorController.UploadVideo);
+router.post(
+  "/editor/projects/upload/:taskId",
+  ensureAuthenticated,
+  isEditor,
+  upload.single("video"),   // <-- multer handles file (stored in memory buffer)
+  editorController.UploadVideo
+);
 
 module.exports = router;
