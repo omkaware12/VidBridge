@@ -25,6 +25,10 @@ router.get(
   projectController.getprojectsofcreator
 );
 
+
+router.get("/getallNotifications" , ensureAuthenticated , isCreator , projectController.getAllnotifications);
+
+
 router.delete("/:id", ensureAuthenticated, isCreator, projectController.DeleteProject);
 
 router.put(
@@ -43,5 +47,9 @@ router.get(
 );
 
 router.get("/:id", ensureAuthenticated, isCreator, projectController.getprojectbyid);
+
+
+router.patch("/approve/:id", ensureAuthenticated, isCreator, projectController.approveNotification);
+
 
 module.exports = router;

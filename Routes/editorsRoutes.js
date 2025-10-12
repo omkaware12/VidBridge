@@ -22,4 +22,6 @@ router.post(
   editorController.UploadVideo
 );
 
+router.put("/projects/:id/ask-approval",ensureAuthenticated , isEditor ,  editorController.askForApproval);
+
 module.exports = router;

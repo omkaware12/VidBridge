@@ -1,4 +1,3 @@
-const { required } = require('joi');
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
@@ -26,7 +25,7 @@ const projectSchema = new mongoose.Schema({
     ref: 'Channel',
     required: true
   },
-    thumbnail: {
+  thumbnail: {
     type: String,
     default: null,
   },
@@ -35,22 +34,29 @@ const projectSchema = new mongoose.Schema({
     enum: ["Low", "Medium", "High"],
     default: "Medium",
   },
-  rawFiles: [{
-    filename: String,
-    path: String,
-    size: Number
-  }],
-  
+  rawFiles: [
+    {
+      filename: String,
+      path: String,
+      size: Number
+    }
+  ],
   deadline: {
     type: Date,
     required: true
   },
-  
   status: {
-  type: String,
-  enum: ["Assigned", "In Progress", "Completed", "Cancelled"], 
-  default: "Assigned",
-}
+    type: String,
+    enum: ["Assigned", "In Progress", "Completed", "Cancelled"],
+    default: "Assigned",
+  },
+
+  // ✅ New Field for Approval Status
+  isApproved: {
+    type: Boolean,
+    default: false, // false until the creator approves the project
+  }
+
 }, {
   timestamps: true
 });

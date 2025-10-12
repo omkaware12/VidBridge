@@ -4,6 +4,7 @@ const { minioClient, BUCKET_NAME } = require("../config/minIO");
 const { google } = require("googleapis");
 const Channel = require("../models/Channel");
 const { Readable } = require("stream");
+const Notification = require("../models/Notification");
 
 
 module.exports.getAssignedProjects = async (req, res) => {
@@ -200,5 +201,63 @@ module.exports.UploadVideo = async (req, res) => {
       error: error.message,
       details: error.errors || null,
     });
+  }
+};
+
+
+module.exports.askForApproval = async (req, res) => {
+  try {
+    const projectId = req.params.id;
+
+    
+    const project = await Project.findById(projectId).populate("creatorId editorId");
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    
+    const existingNotification = await Notification.findOne({
+      userId: project.creatorId._id,
+      relatedProject: project._id,
+      type: "video_uploaded",
+    }).sort({ createdAt: -1 });
+
+    
+    if (existingNotification) {
+      const projectUpdatedAfterNotif =
+        new Date(project.updatedAt) > new Date(existingNotification.createdAt);
+
+      if (!projectUpdatedAfterNotif) {
+        return res.status(200).json({
+          success: false,
+          message: "Approval already requested. No new updates found.",
+        });
+      }
+
+      
+      await Notification.deleteOne({ _id: existingNotification._id });
+    }
+
+    
+    project.isApproved = false;
+    await project.save();
+
+    
+    await Notification.create({
+      userId: project.creatorId._id,
+      type: "video_uploaded",
+      title: "Approval Requested",
+      message: `Editor ${project.editorId?.name || "An editor"} has requested your approval for "${project.title}".`,
+      relatedProject: project._id,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Approval request sent to the creator successfully!",
+      project,
+    });
+  } catch (error) {
+    console.error("❌ Error in askForApproval:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };

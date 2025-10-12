@@ -29,12 +29,9 @@ const notificationSchema = new mongoose.Schema({
   // Related entities
   relatedProject: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project'
+    ref: 'projectSchema'
   },
-  relatedVideo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Video'
-  },
+  
   
   isRead: {
     type: Boolean,
