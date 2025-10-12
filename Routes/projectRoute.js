@@ -4,12 +4,17 @@ const projectController  = require("../Controllers/projectController");
 const ensureAuthenticated = require("../middleware/isAuthenticated");
 const isCreator = require("../middleware/iscreator");
 const upload = require("../middleware/Upload");
+const { cloudinary, storage } = require("../Cloud");
+const multer = require("multer");
 
 router.post(
   "/createproject",
   ensureAuthenticated,
   isCreator,
-  upload.single("rawFile"),
+   upload.fields([
+    { name: "rawFile", maxCount: 1 },
+    { name: "thumbnail", maxCount: 1 },
+  ]),
   projectController.createProject
 );
 

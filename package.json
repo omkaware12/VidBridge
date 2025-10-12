@@ -28,6 +28,7 @@
     "pdfkit": "^0.17.2",
     "routers": "^0.1.4",
     "stream": "^0.0.3",
+    "streamifier": "^0.1.1",
     "stripe": "^18.5.0"
   }
 }

@@ -6,19 +6,19 @@ const isEditor = require('../middleware/isEditor');
 // const VideoUpload  = require("../middleware/VideoUpload")
 const upload  = require("../middleware/Upload")
 
-router.get("/editor/projects", ensureAuthenticated, editorController.getAssignedProjects);
+router.get("/projects", ensureAuthenticated, editorController.getAssignedProjects);
 
-router.patch("/editor/projects/:id/status", ensureAuthenticated, isEditor, editorController.updateProjectStatus);
+router.patch("/projects/:id/status", ensureAuthenticated, isEditor, editorController.updateProjectStatus);
 
-router.post("/editor/projects/download" ,  ensureAuthenticated , isEditor , editorController.getdownloadUrl);
+router.post("/projects/download" ,  ensureAuthenticated , isEditor , editorController.getdownloadUrl);
 
-router.get("/editor/projects/completed" , ensureAuthenticated , isEditor , editorController.completedvideos);
+router.get("/projects/completed" , ensureAuthenticated , isEditor , editorController.completedvideos);
 
 router.post(
-  "/editor/projects/upload/:taskId",
+  "/projects/upload/:taskId",
   ensureAuthenticated,
   isEditor,
-  upload.single("video"),   // <-- multer handles file (stored in memory buffer)
+  upload.single("video"),
   editorController.UploadVideo
 );
 

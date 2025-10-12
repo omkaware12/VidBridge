@@ -1,3 +1,4 @@
+const { required } = require('joi');
 const mongoose = require('mongoose');
 
 const projectSchema = new mongoose.Schema({
@@ -24,6 +25,10 @@ const projectSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Channel',
     required: true
+  },
+    thumbnail: {
+    type: String,
+    default: null,
   },
   priority: {
     type: String,

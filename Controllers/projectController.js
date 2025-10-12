@@ -2,55 +2,91 @@ const Project = require("../models/ProjectSchema")
 const channel = require("../models/Channel")
 const User = require("../models/UserSchema")
 const {minioClient , BUCKET_NAME} = require("../config/minIO")
+const {cloudinary} = require("../Cloud");
+const streamifier = require("streamifier");
+
+
 
 
 exports.createProject = async (req, res) => {
   try {
-    const { title, description, deadline , priority , assignedEditor } = req.body;
-      const creatorId = req.user._id; 
+    const { title, description, deadline, priority, assignedEditor } = req.body;
+    const creatorId = req.user._id;
 
-      const Channel = await channel.findOne({userId: creatorId});
-      if(!Channel){
-        return res.status(400).json({success: false , message: "Please connect your YouTube channel first"})
-      }
+    const Channel = await channel.findOne({ userId: creatorId });
+    if (!Channel) {
+      return res.status(400).json({
+        success: false,
+        message: "Please connect your YouTube channel first",
+      });
+    }
 
     let rawFileData = null;
+    let thumbnailUrl = null;
 
-    
-    if (req.file) {
-      const fileName = Date.now() + "_" + req.file.originalname;
+    // ✅ Handle raw file upload to MinIO
+    if (req.files?.rawFile?.[0]) {
+      const rawFile = req.files.rawFile[0];
+      const fileName = Date.now() + "_" + rawFile.originalname;
 
       await minioClient.putObject(
         BUCKET_NAME,
         fileName,
-        req.file.buffer,
-        req.file.size
+        rawFile.buffer,
+        rawFile.size
       );
 
       rawFileData = {
         filename: fileName,
-        size: req.file.size,
-        path: `${BUCKET_NAME}/${fileName}`
+        size: rawFile.size,
+        path: `${BUCKET_NAME}/${fileName}`,
       };
     }
 
+    // ✅ Handle thumbnail upload to Cloudinary
+    if (req.files?.thumbnail?.[0]) {
+      const thumbFile = req.files.thumbnail[0];
+
+      const uploadToCloudinary = () =>
+        new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "thumbnails",
+              resource_type: "image",
+            },
+            (error, result) => {
+              if (error) return reject(error);
+              resolve(result);
+            }
+          );
+          streamifier.createReadStream(thumbFile.buffer).pipe(uploadStream);
+        });
+
+      const result = await uploadToCloudinary();
+      thumbnailUrl = result.secure_url;
+    }
+
+    // ✅ Create the project
     const project = await Project.create({
       title,
       description,
       creatorId,
       editorId: assignedEditor || null,
-      channelId:Channel._id,
+      channelId: Channel._id,
       deadline,
       priority,
-      rawFiles: rawFileData ? [rawFileData] : []
+      rawFiles: rawFileData ? [rawFileData] : [],
+      thumbnail: thumbnailUrl,
     });
-   await project.populate("editorId" , "name email");
+
+    await project.populate("editorId", "name email");
     res.status(201).json({ success: true, project });
   } catch (error) {
-    console.error(" Error creating project:", error);
+    console.error("Error creating project:", error);
     res.status(500).json({ success: false, message: "Project creation failed" });
   }
 };
+
 
 
 exports.getprojectsofcreator = async (req , res)=>{
@@ -77,6 +113,7 @@ exports.getprojectsofcreator = async (req , res)=>{
                 }),
                 channelName: p.channelId?.channelName || "N/A",
                 rawFiles: p.rawFiles, 
+                thumbnail: p.thumbnail,
             }));
             res.status(200).json({success: true , projects});
       }

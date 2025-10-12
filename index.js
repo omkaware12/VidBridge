@@ -51,7 +51,7 @@ app.use("/api/v1/google", googleroutes);
 app.use("/api/v1/project", projectRoutes);
 app.use("/api/v1/profile" , ProfileRoute);
 app.use("/api/v1/payments", PaymentRoute);
-app.use("/api/v1", editorsRoutes);
+app.use("/api/v1/editor", editorsRoutes);
 app.use("/api/v1/youtube", Analytics);
 
 
