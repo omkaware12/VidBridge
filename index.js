@@ -6,6 +6,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const multer = require("multer");
 
 
 const PORT = process.env.PORT || 8000;
@@ -16,6 +17,7 @@ const projectRoutes = require("./Routes/projectRoute")
 const ProfileRoute = require("./Routes/profileRoute");
 const PaymentRoute = require("./Routes/PaymentRoute");
 const Analytics  = require("./Routes/Analytics");
+const UploadRoute = require("./Routes/upload.routes");
 // const {stripeWebhook} = require("./Controllers/PaymentController")
 const editorsRoutes = require("./Routes/editorsRoutes");
 const ExpressError = require("./middleware/expressError");
@@ -53,7 +55,8 @@ app.use("/api/v1/profile" , ProfileRoute);
 app.use("/api/v1/payments", PaymentRoute);
 app.use("/api/v1/editor", editorsRoutes);
 app.use("/api/v1/youtube", Analytics);
-
+const upload = multer({ dest: "uploads/" });
+app.use("/api/v1/upload", upload.single("video"), UploadRoute);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
